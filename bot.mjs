@@ -15,10 +15,28 @@ try {
   const data = fs.readFileSync('words.txt', 'UTF-8');
   const lines = data.split(/\r?\n/);
   lines.forEach((line) => {
-      words.push(line);
+      words.push(line.split(" "));
   });
 } catch (err) {
   console.error(err);
+}
+
+function find_uniq(cards_num) {
+  var str;
+  var uniq;
+  for (var i=0; i<cards_num.length; i++) {
+    for (var j=1; j<words[cards_num[i]].length; j++) {
+      uniq=true;
+      str=words[cards_num[i]][j];
+      for (var k=1; k<words.length; k++) {
+        if (k!=cards_num[i] && words[k].includes(str)) {
+          uniq=false;
+          break;
+        }
+      }
+      return str;
+    }
+  }
 }
 
 function get_card(num) {
@@ -33,11 +51,13 @@ bot.use(session.middleware());
 
 bot.command('Старт', async (ctx) => {
   var cards=[];
+  var cards_num=[];
   var id=ctx.message.from_id;
   if (session_data[id]==undefined) {
     console.log("New session");
     session_data[id]={};
     session_data[id].cards=[];
+    session_data[id].score=0;
   }
   for (var i=0; i<5; i++) {
     if (session_data[id].length>card_limit) {
@@ -67,9 +87,27 @@ bot.command('Старт', async (ctx) => {
     }
     session_data[id].cards.push(num);
     cards.push(get_card(num));
+    cards_num.push(num);
   }
-  //var word=find_uniq();
+  var word=find_uniq(cards_num);
+  console.log(word);
+  session_data[id].word=word;
   ctx.reply(""+session_data[id].cards.length, cards);
+});
+
+bot.on(async (ctx) => {
+  var id=ctx.message.from_id;
+  if (session_data[id]===undefined) {
+    ctx.reply("Сначала наберите команду Старт");
+    return;
+  }
+  console.log(ctx.message.text);
+  if (ctx.message.text==session_data[id].word) {
+    session_data[id].score+=3;
+    ctx.reply("Верно! Счет: "+session_data[id].score);
+  } else {
+    ctx.reply("Неверно! Счет: "+session_data[id].score);
+  }
 });
 
 bot.startPolling((err) => {
