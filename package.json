@@ -1,0 +1,11 @@
+{
+  "name": "bot",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.mjs"
+  },
+  "dependencies": {
+    "node-vk-bot-api": "^3.5.0"
+  }
+}
