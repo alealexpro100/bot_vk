@@ -6,7 +6,7 @@ const token="46890da5f3e63cf2c3ac0b674f9f465ac8a305b6b4a612301dbb78103e3366b280d
 
 const bot = new VkBot(token);
 const session = new VkBotSession();
-const card_limit=99;
+const card_limit=98;
 
 var words = ["empty"];
 var session_data= {};
@@ -21,22 +21,36 @@ try {
   console.error(err);
 }
 
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function find_uniq(cards_num) {
-  var str;
+  var pic_num=getRandomInt(1, cards_num.length);
+  var pic_id=cards_num[pic_num];
+  console.log(pic_id);
+  var str=words[pic_id][getRandomInt(0, words[pic_id].length)];
+  console.log(str);
   var uniq;
   for (var i=0; i<cards_num.length; i++) {
-    for (var j=1; j<words[cards_num[i]].length; j++) {
+    for (var j=0; j<words[cards_num[i]].length; j++) {
       uniq=true;
-      str=words[cards_num[i]][j];
-      for (var k=1; k<words.length; k++) {
-        if (k!=cards_num[i] && words[k].includes(str)) {
+      for (var k=0; k<words.length; k++) {
+        if (k!=pic_id && words[k].includes(str)) {
           uniq=false;
           break;
         }
       }
-      return str;
+      if (uniq)
+        break;
+      pic_num=i;
+      pic_id=cards_num[i];
+      str=words[pic_id][j];
     }
   }
+  return {"word": str, "pic": pic_num+1};
 }
 
 function get_card(num) {
@@ -60,11 +74,6 @@ bot.command('Старт', async (ctx) => {
     session_data[id].score=0;
   }
   for (var i=0; i<5; i++) {
-    if (session_data[id].length>card_limit) {
-      ctx.reply("Нет больше карт. Сбрасываю количество карт.");
-      session_data[id].cards=[];
-      return;
-    }
     var num;
     var cont=true;
     while (cont) {
@@ -92,7 +101,8 @@ bot.command('Старт', async (ctx) => {
   var word=find_uniq(cards_num);
   console.log(word);
   session_data[id].word=word;
-  ctx.reply(""+session_data[id].cards.length, cards);
+  ctx.reply("Какой карте подходит ключевое слово?\n"+"Слово: "+word["word"], cards);
+  ctx.reply("Какой карте подходит ключевое слово?", cards);
 });
 
 bot.on(async (ctx) => {
@@ -102,7 +112,7 @@ bot.on(async (ctx) => {
     return;
   }
   console.log(ctx.message.text);
-  if (ctx.message.text==session_data[id].word) {
+  if (ctx.message.text===session_data[id].word["pic"]) {
     session_data[id].score+=3;
     ctx.reply("Верно! Счет: "+session_data[id].score);
   } else {
