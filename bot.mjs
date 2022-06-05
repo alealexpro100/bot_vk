@@ -11,6 +11,13 @@ const card_limit=98;
 
 var words = [[]];
 var session_data= {};
+var photos = [];
+
+function get_photos(url) {
+  
+}
+
+get_photos("https://vk.com/public213718186?z=album-213718186_286014894");
 
 try {
   const data = fs.readFileSync('words.txt', 'UTF-8');
@@ -20,6 +27,10 @@ try {
   });
 } catch (err) {
   console.error(err);
+}
+
+function is_link(str) {
+  return str.startsWith("http");
 }
 
 function getRandomInt(min, max) {
@@ -111,20 +122,15 @@ bot.command('Старт', async (ctx) => {
   ]));
 });
 
-bot.command('/mood', (ctx) => {
-  ctx.reply('How are you doing?', null, Markup
-    .keyboard([
-      [
-        Markup.button('Normally', 'primary'),
-      ],
-      [
-        Markup.button('Fine', 'positive'),
-        Markup.button('Bad', 'negative'),
-      ],
-    ]));
-});
+function set_album(ctx) {
+  ctx.reply("Unimplemented");
+}
 
 bot.on(async (ctx) => {
+  if (is_link(ctx.message.text)) {
+    set_album(ctx);
+    return;
+  }
   var id=ctx.message.from_id;
   if (session_data[id]===undefined || session_data[id].done) {
     ctx.reply("Сначала наберите команду Старт", null, Markup
