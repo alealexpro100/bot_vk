@@ -1,5 +1,6 @@
 import VkBot from 'node-vk-bot-api';
 import VkBotSession from 'node-vk-bot-api/lib/session.js';
+import Markup from 'node-vk-bot-api/lib/markup.js';
 import fs from 'fs';
 
 const token="46890da5f3e63cf2c3ac0b674f9f465ac8a305b6b4a612301dbb78103e3366b280d9b0fa4306730d930ec";
@@ -8,7 +9,7 @@ const bot = new VkBot(token);
 const session = new VkBotSession();
 const card_limit=98;
 
-var words = ["empty"];
+var words = [[]];
 var session_data= {};
 
 try {
@@ -28,17 +29,17 @@ function getRandomInt(min, max) {
 }
 
 function find_uniq(cards_num) {
-  var pic_num=getRandomInt(1, cards_num.length);
+  var pic_num=getRandomInt(0, cards_num.length-1);
   var pic_id=cards_num[pic_num];
   console.log(pic_id);
-  var str=words[pic_id][getRandomInt(0, words[pic_id].length)];
+  var str=words[pic_id][getRandomInt(0, words[pic_id].length-1)];
   console.log(str);
   var uniq;
-  for (var i=0; i<cards_num.length; i++) {
-    for (var j=0; j<words[cards_num[i]].length; j++) {
+  for (var i=1; i<cards_num.length-1; i++) {
+    for (var j=1; j<words[cards_num[i]].length-1; j++) {
       uniq=true;
-      for (var k=0; k<words.length; k++) {
-        if (k!=pic_id && words[k].includes(str)) {
+      for (var k=1; k<cards_num.length-1; k++) {
+        if (cards_num[k]!=pic_id && words[cards_num[k]].includes(str)) {
           uniq=false;
           break;
         }
@@ -72,6 +73,10 @@ bot.command('Старт', async (ctx) => {
     session_data[id]={};
     session_data[id].cards=[];
     session_data[id].score=0;
+    session_data[id].done=false;
+  } else {
+    console.log("Session continued");
+    session_data[id].done=false;
   }
   for (var i=0; i<5; i++) {
     var num;
@@ -79,18 +84,12 @@ bot.command('Старт', async (ctx) => {
     while (cont) {
       cont=false;
       num=Math.floor(Math.random() * (card_limit-1))+1;
-      for (var j=0; j<session_data[id].length; j++) {
-        if (session_data[id].cards[j]===num) {
-          cont=true;
-          break;
-        }
+      if (session_data[id].cards.includes(num)) {
+        cont=true;
       }
       if (!cont) {
-        for (var j=0; j<cards.length; j++) {
-          if (cards[j]===num) {
-            cont=true;
-            break;
-          }
+        if (cards.includes(num)) {
+          cont=true;
         }
       }
     }
@@ -98,25 +97,56 @@ bot.command('Старт', async (ctx) => {
     cards.push(get_card(num));
     cards_num.push(num);
   }
+  console.log(cards_num);
   var word=find_uniq(cards_num);
   console.log(word);
   session_data[id].word=word;
-  ctx.reply("Какой карте подходит ключевое слово?\n"+"Слово: "+word["word"], cards);
-  ctx.reply("Какой карте подходит ключевое слово?", cards);
+  ctx.reply("Какой карте подходит ключевое слово?\n"+"Слово: "+word["word"], cards, Markup
+  .keyboard([
+    Markup.button('1', 'primary'),
+    Markup.button('2', 'primary'),
+    Markup.button('3', 'primary'),
+    Markup.button('4', 'primary'),
+    Markup.button('5', 'primary')
+  ]));
+});
+
+bot.command('/mood', (ctx) => {
+  ctx.reply('How are you doing?', null, Markup
+    .keyboard([
+      [
+        Markup.button('Normally', 'primary'),
+      ],
+      [
+        Markup.button('Fine', 'positive'),
+        Markup.button('Bad', 'negative'),
+      ],
+    ]));
 });
 
 bot.on(async (ctx) => {
   var id=ctx.message.from_id;
-  if (session_data[id]===undefined) {
-    ctx.reply("Сначала наберите команду Старт");
+  if (session_data[id]===undefined || session_data[id].done) {
+    ctx.reply("Сначала наберите команду Старт", null, Markup
+    .keyboard([
+      Markup.button('Старт', 'primary'),
+    ]));
     return;
   }
   console.log(ctx.message.text);
-  if (ctx.message.text===session_data[id].word["pic"]) {
+  if (ctx.message.text==session_data[id].word["pic"]) {
     session_data[id].score+=3;
-    ctx.reply("Верно! Счет: "+session_data[id].score);
+    session_data[id].done=true;
+    ctx.reply("Верно! Счет: "+session_data[id].score, null, Markup
+    .keyboard([
+      Markup.button('Старт', 'primary'),
+    ]));
   } else {
-    ctx.reply("Неверно! Счет: "+session_data[id].score);
+    session_data[id].done=true;
+    ctx.reply("Неверно! Счет: "+session_data[id].score, null, Markup
+    .keyboard([
+      Markup.button('Старт', 'primary'),
+    ]));
   }
 });
 
