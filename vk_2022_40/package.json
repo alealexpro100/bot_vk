@@ -1,0 +1,11 @@
+{
+  "name": "bot_vk_2022_40",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.mjs"
+  },
+  "dependencies": {
+    "axios": "^0.27.2"
+  }
+}
